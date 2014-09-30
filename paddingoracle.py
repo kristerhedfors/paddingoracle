@@ -130,10 +130,10 @@ class Test_PaddingOracleSolver(unittest.TestCase):
         MyOracle = self.__class__.MyOracle
         #
         # SimpleAES defaults to using a strong random IV
-        # and, if pbkdf2_c > 0, a strong random salt for
+        # and, if c > 0, a strong random salt for
         # key expansion.
         #
-        aes = SimpleAES('password', pbkdf2_c=1)
+        aes = SimpleAES('password', c=1)
         pa_solver = PaddingOracleSolver(MyOracle, aes)
         plaintext = 'Kun avasin Saatana saapuu Moskovaan -kirjan kannet.'
         plaintext += ' Ei paljon puuttunut perunamuusi ja perse.'
@@ -155,7 +155,7 @@ class Test_PaddingOracleSolver(unittest.TestCase):
         for v in vectors:
             if len(v['plaintext']) < 16:
                 continue
-            aes = SimpleAES(key=v['key'], iv=v['IV'], pbkdf2_c=0)
+            aes = SimpleAES(key=v['key'], iv=v['IV'], c=0)
             pa_solver = PaddingOracleSolver(MyOracle, aes)
             (intm, pt) = pa_solver.solve(v['ciphertext'])
             pt = pt.tostring()

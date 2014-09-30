@@ -20,20 +20,24 @@ class PaddingError(SimpleAESException):
 
 
 class SimpleAES(object):
-    'AES CBC PKCS#7'
+    '''
+        AES CBC PKCS#7
 
+        Note that arguments `salt` and `c` are used exclusively for key
+        expansion with the PBKDF2 function. Setting `salt` but leaving c=0
+        raises an exception as salt will have no effect unless c > 0.
+    '''
     key_size = 32
 
-    def __init__(self, key, iv=None, salt=None, pbkdf2_c=0, verbose=0):
+    def __init__(self, key, iv=None, salt=None, c=0, verbose=0):
         self._key = key
-        self._pbkdf2_c = pbkdf2_c
+        self._c = c
         self._verbose = verbose
         self._iv = iv or self._new_iv()
         self._salt = salt or self._new_salt()
-        if salt:
-            if not self._pbkdf2_c:
-                errmsg = 'salt given but will not be used unless pbkdf2_c > 0'
-                raise SimpleAESException(errmsg)
+        if salt and self._c <= 0:
+            errmsg = 'salt given but will not be used unless c > 0'
+            raise SimpleAESException(errmsg)
 
     def _new_salt(self):
         return Random.new().read(self.key_size)
@@ -46,12 +50,12 @@ class SimpleAES(object):
         if iv is None:
             iv = self._new_iv()
         if salt is None:
-            if not self._pbkdf2_c:
-                errmsg = 'salt given but will not be used unless pbkdf2_c > 0'
+            if not self._c:
+                errmsg = 'salt given but will not be used unless c > 0'
                 raise SimpleAESException(errmsg)
             salt = self._salt
-        if self._pbkdf2_c:
-            key = PBKDF2(self._key, salt, self.key_size, self._pbkdf2_c)
+        if self._c:
+            key = PBKDF2(self._key, salt, self.key_size, self._c)
         cipher = AES.new(key, AES.MODE_CBC, iv)
         return cipher
 
@@ -140,7 +144,7 @@ class Test_SimpleAES(unittest.TestCase):
         for c in (3, 11, 29, 107, 383):
             for v in vectors:
                 key, iv, pt = itemgetter('key', 'IV', 'plaintext')(v)
-                aes = SimpleAES(key=key, iv=iv, pbkdf2_c=c)
+                aes = SimpleAES(key=key, iv=iv, c=c)
                 ct = aes.encrypt(pt)
                 assert ct != v['ciphertext']
                 pt = aes.decrypt(ct)
@@ -152,7 +156,7 @@ class Test_SimpleAES(unittest.TestCase):
         for c in xrange(32):
             for v in vectors:
                 key, iv, ct = itemgetter('key', 'IV', 'ciphertext')(v)
-                aes = SimpleAES(key=key, iv=iv, pbkdf2_c=c)
+                aes = SimpleAES(key=key, iv=iv, c=c)
                 ct = chr((ord(ct[0]) + 1) % 256) + ct[1:]
                 try:
                     pt = aes.decrypt(ct)
