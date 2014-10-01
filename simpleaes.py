@@ -94,7 +94,6 @@ class SimpleAES(object):
             iv = self._iv
         if salt is None:
             salt = self._salt
-        # !!! static IV
         cipher = self.new_cipher(iv=iv, salt=salt)
         pkcs7 = cipher.decrypt(ciphertext)
         plaintext = self._pkcs7_decode(pkcs7)
@@ -103,6 +102,12 @@ class SimpleAES(object):
     def _tostring(self, val):
         if isinstance(val, array.array):
             val = val.tostring()
+        elif type(val) is str:
+            pass
+        else:
+            errmsg = 'Only arrays and strings are accepted (not {0}).'
+            errmsg = errmsg.format(type(val))
+            raise SimpleAESException(errmsg)
         return val
 
     def encrypt(self, plaintext, salt=None, iv=None):
