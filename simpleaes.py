@@ -19,17 +19,7 @@ class PaddingError(SimpleAESException):
     pass
 
 
-class _SimpleAES(object):
-    @classmethod
-    def new_salt(self):
-        return Random.new().read(self.key_size)
-
-    @classmethod
-    def new_iv(self):
-        return Random.new().read(AES.block_size)
-
-
-class SimpleAES(_SimpleAES):
+class SimpleAES(object):
     '''
         AES CBC PKCS#7
 
@@ -37,29 +27,29 @@ class SimpleAES(_SimpleAES):
         expansion with the PBKDF2 function. Setting `salt` but leaving c=0
         raises an exception as salt will have no effect unless c > 0.
     '''
-    key_size = 32
+    KEY_SIZE = 32
 
-    def __init__(self,
-                 key,
-                 iv=_SimpleAES.new_iv(),
-                 salt=None,
-                 c=0):
-
+    def __init__(self, key, iv=None, salt=None, c=0):
         self._key = key
         self._iv = iv
         self._salt = salt
         self._c = c
-        if (salt and not c) or (c and not salt):
-            errmsg = 'salt requires c > 0 and vice versa'
-            raise SimpleAESException(errmsg)
 
     def new_cipher(self, **kw):
-        iv = kw.get('iv', self._iv)
+        iv = kw.get('iv', self._iv or SimpleAES.new_iv())
         salt = kw.get('salt', self._salt)
         c = kw.get('c', self._c)
         key = self._derive_key(self._key, salt, c)
         cipher = AES.new(key, AES.MODE_CBC, iv)
         return cipher
+
+    @classmethod
+    def new_salt(cls):
+        return Random.new().read(cls.KEY_SIZE)
+
+    @classmethod
+    def new_iv(cls):
+        return Random.new().read(AES.block_size)
 
     def _derive_key(self, inkey, salt, c):
         if not salt and not c:
@@ -67,7 +57,7 @@ class SimpleAES(_SimpleAES):
         elif (salt and not c) or (c and not salt):
             errmsg = 'salt requires c > 0 and vice versa'
             raise SimpleAESException(errmsg)
-        key = PBKDF2(inkey, salt, self.key_size, self._c)
+        key = PBKDF2(inkey, salt, self.KEY_SIZE, self._c)
         return key
 
     def _pkcs7_encode(self, data):
