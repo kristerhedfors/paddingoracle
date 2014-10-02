@@ -35,7 +35,7 @@ class SimpleAES(object):
         self._salt = salt
         self._c = c
 
-    def new_cipher(self, **kw):
+    def _new_cipher(self, **kw):
         iv = kw.get('iv', self._iv or SimpleAES.new_iv())
         salt = kw.get('salt', self._salt)
         c = kw.get('c', self._c)
@@ -80,12 +80,12 @@ class SimpleAES(object):
 
     def _encrypt(self, plaintext, **kw):
         pkcs7 = self._pkcs7_encode(plaintext)
-        cipher = self.new_cipher(**kw)
+        cipher = self._new_cipher(**kw)
         ciphertext = cipher.encrypt(pkcs7)
         return ciphertext
 
     def _decrypt(self, ciphertext, **kw):
-        cipher = self.new_cipher(**kw)
+        cipher = self._new_cipher(**kw)
         pkcs7 = cipher.decrypt(ciphertext)
         plaintext = self._pkcs7_decode(pkcs7)
         return plaintext
