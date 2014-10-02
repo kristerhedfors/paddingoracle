@@ -133,7 +133,8 @@ class Test_PaddingOracleSolver(unittest.TestCase):
         # and, if c > 0, a strong random salt for
         # key expansion.
         #
-        aes = SimpleAES('password', c=1)
+        salt = SimpleAES.new_salt()
+        aes = SimpleAES('password', salt=salt, c=1)
         pa_solver = PaddingOracleSolver(MyOracle, aes)
         plaintext = 'Kun avasin Saatana saapuu Moskovaan -kirjan kannet.'
         plaintext += ' Ei paljon puuttunut perunamuusi ja perse.'
